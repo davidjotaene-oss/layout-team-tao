@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Layout MyL Final - Dual God Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Orbitron:wght@700&family=Montserrat:wght@800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --neon-cyan: #00f2ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --fire-main: #ff4d00;
+            --fire-light: #ffcc00;
+            --dark-tcg: #0a0a0c;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 1920px; height: 1080px;
+            background: transparent !important;
+            font-family: 'Bangers', cursive;
+            color: white;
+            overflow: hidden;
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            grid-template-rows: 160px 1fr 20px;
+            width: 100%; height: 100%;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            grid-column: 1 / span 2;
+            background: black;
+            border-bottom: 4px solid var(--neon-cyan);
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            padding: 0 60px;
+            box-shadow: 0 5px 25px rgba(0, 242, 255, 0.4);
+            z-index: 10;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- TÍTULO (CENTRADO ABSOLUTO) --- */
+        .title-group { 
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center; 
+            z-index: 15; 
+        }
+        .subtitle-myl { margin: 0; font-family: 'Orbitron', sans-serif; font-size: 1.1rem; color: var(--neon-green); letter-spacing: 5px; text-shadow: 0 0 10px var(--neon-green); }
+        .team-title { font-size: 5.5rem; color: #fff; letter-spacing: 4px; text-shadow: 2px 2px 5px black, 0 0 20px var(--neon-cyan); margin: 0; line-height: 1; }
+
+        /* --- CONTENEDORES DE PERSONAJES (SIMÉTRICOS) --- */
+        .char-container {
+            position: absolute;
+            top: 10px;
+            height: 140px;
+            width: 400px;
+            z-index: 1;
+            background: radial-gradient(circle at center, transparent 30%, black 85%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Posición Izquierda (Lucemon) */
+        .char-left { left: 20%; }
+        
+        /* Posición Derecha (Mecha) */
+        .char-right { right: 20%; }
+
+        .bg-character {
+            height: 220%;
+            transform: translateY(30px);
+            animation: burnEffect 1.5s infinite alternate;
+        }
+
+        @keyframes burnEffect {
+            0% { filter: brightness(0.7) drop-shadow(0 0 5px var(--fire-main)); }
+            100% { filter: brightness(1.1) drop-shadow(0 0 25px var(--fire-main)); }
+        }
+
+        /* --- TAO PAI PAI CON PARTÍCULAS --- */
+        .tao-container {
+            position: relative; width: 280px; height: 150px;
+            display: flex; align-items: center; justify-content: center;
+            animation: flyFloat 3s ease-in-out infinite, vibrate 0.2s linear infinite;
+            z-index: 15;
+        }
+        .tao-img { height: 130px; z-index: 2; filter: drop-shadow(0 0 10px var(--neon-pink)); }
+
+        .speed-lines { position: absolute; right: 40%; width: 200px; height: 100px; z-index: 1; overflow: hidden; }
+        .line {
+            position: absolute; background: linear-gradient(90deg, transparent, var(--neon-green));
+            height: 2px; border-radius: 2px; opacity: 0.6; animation: moveLines 0.5s linear infinite;
+        }
+
+        @keyframes moveLines { from { transform: translateX(0); } to { transform: translateX(-200px); opacity: 0; } }
+        @keyframes flyFloat { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-10px) rotate(1deg); } }
+        @keyframes vibrate { 0% { margin-left: 0px; } 25% { margin-left: 1px; } 100% { margin-left: 0px; } }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            background-color: var(--dark-tcg);
+            background-image: radial-gradient(circle, #1a1a1a 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-left: 3px solid var(--neon-cyan);
+            padding: 25px; display: flex; flex-direction: column; gap: 20px;
+            z-index: 20;
+        }
+        .neon-border { border: 1px solid var(--neon-cyan); padding: 15px; border-radius: 10px; background: rgba(0, 0, 0, 0.9); }
+
+        /* --- SOCIAL --- */
+        .social-box { margin-top: auto; border: 2px solid var(--neon-pink); background: black; padding: 15px; text-align: center; border-radius: 12px; }
+        .instagram-tag { display: inline-flex; align-items: center; gap: 8px; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--neon-cyan); }
+        .instagram-tag i { color: var(--neon-pink); font-size: 1.6rem; }
+
+        /* --- OTROS --- */
+        .game-area { background: transparent !important; }
+        .score-val { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; color: var(--neon-cyan); }
+        .score-btn { background: var(--neon-cyan); border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; opacity: 0; transition: 0.3s; }
+        .neon-border:hover .score-btn { opacity: 1; }
+        .footer-bar { grid-column: 1 / span 2; background: linear-gradient(90deg, var(--neon-cyan), black, var(--neon-pink)); }
+        .label { display: block; color: var(--neon-pink); font-size: 1.1rem; text-transform: uppercase; margin-bottom: 8px; }
+        .card-slot { width: 100%; height: 460px; background: rgba(0,0,0,0.5); border: 1px dashed #333; border-radius: 15px; }
+        .logo-geek { width: 230px; filter: drop-shadow(0 0 8px var(--neon-cyan)); z-index: 15; position: relative; }
+    </style>
+</head>
+<body>
+
+    <div class="layout-grid">
+        <header class="header">
+            <!-- Logos Izquierdos: Tao con Partículas -->
+            <div class="tao-container">
+                <div class="speed-lines">
+                    <div class="line" style="top:20%; width:80px; animation-delay: 0.1s"></div>
+                    <div class="line" style="top:50%; width:120px; animation-delay: 0.3s"></div>
+                    <div class="line" style="top:80%; width:60px; animation-delay: 0s"></div>
+                </div>
+                <img src="tao_logo.png" alt="Tao Pai Pai" class="tao-img">
+            </div>
+
+            <!-- PERSONAJE IZQUIERDA (Lucemon) -->
+            <div class="char-container char-left">
+                <img src="personaje_bg.png" alt="" class="bg-character">
+            </div>
+            
+            <!-- Centro: Título Mitos y Leyendas -->
+            <div class="title-group">
+                <p class="subtitle-myl">MITOS Y LEYENDAS</p>
+                <h1 class="team-title">TEAM TAO PAI PAI</h1>
+            </div>
+
+            <!-- PERSONAJE DERECHA (Mecha) -->
+            <div class="char-container char-right">
+                <img src="personaje_right.png" alt="" class="bg-character">
+            </div>
+
+            <!-- Derecha: Logo AO Geek -->
+            <img src="aogeek.png" alt="AO GEEK STORE" class="logo-geek">
+        </header>
+
+        <main class="game-area"></main>
+
+        <aside class="sidebar">
+            <div class="neon-border">
+                <span class="label">Carta Jugada</span>
+                <div class="card-slot"></div>
+            </div>
+
+            <div class="neon-border">
+                <span class="label">Score</span>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                    <div style="text-align: center;">
+                        <button class="score-btn" onclick="changeScore('p1', 1)">+</button>
+                        <div id="p1-val" class="score-val">0</div>
+                        <button class="score-btn" onclick="changeScore('p1', -1)">-</button>
+                    </div>
+                    <div class="score-val" style="opacity: 0.3;">:</div>
+                    <div style="text-align: center;">
+                        <button class="score-btn" onclick="changeScore('p2', 1)">+</button>
+                        <div id="p2-val" class="score-val">0</div>
+                        <button class="score-btn" onclick="changeScore('p2', -1)">-</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="social-box">
+                <span style="display:block; font-family:'Montserrat'; font-size:0.7rem; margin-bottom:5px; color:#666;">FOLLOW US</span>
+                <div class="instagram-tag">
+                    <i class="fab fa-instagram"></i>
+                    @teamtaopaipai
+                </div>
+            </div>
+        </aside>
+
+        <div class="footer-bar"></div>
+    </div>
+
+    <script>
+        function changeScore(player, amount) {
+            const el = document.getElementById(player + '-val');
+            let score = parseInt(el.innerText);
+            if (score + amount >= 0) el.innerText = score + amount;
+        }
+    </script>
+</body>
+</html>
