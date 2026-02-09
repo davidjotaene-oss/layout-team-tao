@@ -215,6 +215,48 @@
             animation: pulse 1s infinite;
         }
         
+        /* Botón de modo continuo */
+        .continuous-btn {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--neon-green);
+            color: var(--neon-green);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.3);
+        }
+        
+        .continuous-btn:hover {
+            background: var(--neon-green);
+            color: black;
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(57, 255, 20, 0.6);
+        }
+        
+        .continuous-btn.active {
+            background: var(--neon-green);
+            color: black;
+            animation: pulseGreen 2s infinite;
+        }
+        
+        @keyframes pulseGreen {
+            0%, 100% { 
+                box-shadow: 0 0 15px var(--neon-green);
+            }
+            50% { 
+                box-shadow: 0 0 35px var(--neon-green);
+            }
+        }
+        
         @keyframes pulse {
             0%, 100% { 
                 box-shadow: 0 0 15px var(--neon-pink);
@@ -242,7 +284,7 @@
         }
         
         .voice-status.active {
-            opacity: 1;
+            opacity: 0.7;
         }
         
         .voice-status i {
@@ -255,28 +297,6 @@
         @keyframes micPulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.2); }
-        }
-        
-        /* Notificación de carta no encontrada */
-        .card-notification {
-            position: absolute;
-            bottom: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 0, 127, 0.9);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.8rem;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            white-space: nowrap;
-        }
-        
-        .card-notification.show {
-            opacity: 1;
         }
         .logo-geek { width: 230px; filter: drop-shadow(0 0 8px var(--neon-cyan)); z-index: 15; position: relative; }
         
@@ -371,10 +391,12 @@
                         <span id="status-text">Escuchando...</span>
                     </div>
                     
-                    <!-- Notificación -->
-                    <div class="card-notification" id="card-notification"></div>
+                    <!-- Botón de modo continuo (izquierda) -->
+                    <button class="continuous-btn" id="continuous-btn" onclick="toggleContinuousMode()" title="Modo Escucha Continua (Tecla C)">
+                        <i class="fas fa-infinity"></i>
+                    </button>
                     
-                    <!-- Botón de micrófono -->
+                    <!-- Botón de micrófono (derecha) -->
                     <button class="voice-btn" id="voice-btn" onclick="toggleVoiceRecognition()" title="Click para activar reconocimiento de voz">
                         <i class="fas fa-microphone"></i>
                     </button>
@@ -459,54 +481,112 @@
         // ===== SISTEMA DE RECONOCIMIENTO DE VOZ =====
         let recognition = null;
         let isListening = false;
+        let continuousMode = false;
         
         // Inicializar reconocimiento de voz
         function initVoiceRecognition() {
-            // Verificar soporte del navegador
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             
             if (!SpeechRecognition) {
-                showNotification('Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.');
+                alert('Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.');
                 return null;
             }
             
             recognition = new SpeechRecognition();
-            recognition.lang = 'es-ES'; // Español
-            recognition.continuous = false; // Solo una frase
-            recognition.interimResults = false; // Solo resultados finales
+            recognition.lang = 'es-ES';
+            recognition.continuous = false; // Se reiniciará automáticamente en modo continuo
+            recognition.interimResults = false;
             
             // Cuando obtiene un resultado
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                console.log('Escuchado:', transcript);
+                console.log('Detectado:', transcript);
                 loadCard(transcript);
             };
             
             // Cuando termina de escuchar
             recognition.onend = () => {
-                stopListening();
+                // Si está en modo continuo, reiniciar automáticamente
+                if (continuousMode) {
+                    setTimeout(() => {
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            console.log('Reiniciando reconocimiento...');
+                        }
+                    }, 300);
+                } else {
+                    stopListening();
+                }
             };
             
             // Si hay error
             recognition.onerror = (event) => {
                 console.error('Error de reconocimiento:', event.error);
                 
-                let message = 'Error al escuchar';
-                if (event.error === 'no-speech') {
-                    message = 'No se detectó voz';
-                } else if (event.error === 'not-allowed') {
-                    message = 'Permiso de micrófono denegado';
+                // En modo continuo, reintentar silenciosamente
+                if (continuousMode && event.error !== 'not-allowed') {
+                    setTimeout(() => {
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            console.log('Reintentando...');
+                        }
+                    }, 500);
+                } else {
+                    stopListening();
                 }
-                
-                showNotification(message);
-                stopListening();
             };
             
             return recognition;
         }
         
-        // Alternar reconocimiento de voz
+        // Modo continuo: ON/OFF
+        function toggleContinuousMode() {
+            if (!recognition) {
+                recognition = initVoiceRecognition();
+                if (!recognition) return;
+            }
+            
+            continuousMode = !continuousMode;
+            const continuousBtn = document.getElementById('continuous-btn');
+            const voiceStatus = document.getElementById('voice-status');
+            
+            if (continuousMode) {
+                // Activar modo continuo
+                continuousBtn.classList.add('active');
+                voiceStatus.classList.add('active');
+                document.getElementById('status-text').textContent = 'Modo Continuo Activo';
+                
+                // Iniciar reconocimiento
+                try {
+                    recognition.start();
+                    isListening = true;
+                    console.log('🎤 Modo continuo ACTIVADO - Hablando detectará cartas automáticamente');
+                } catch (error) {
+                    console.error('Error al iniciar:', error);
+                }
+            } else {
+                // Desactivar modo continuo
+                continuousBtn.classList.remove('active');
+                voiceStatus.classList.remove('active');
+                
+                if (recognition) {
+                    recognition.stop();
+                }
+                isListening = false;
+                console.log('🔇 Modo continuo DESACTIVADO');
+            }
+        }
+        
+        // Alternar reconocimiento de voz (botón normal - modo single)
         function toggleVoiceRecognition() {
+            // Si está en modo continuo, no hacer nada
+            if (continuousMode) {
+                console.log('Desactiva el modo continuo primero');
+                return;
+            }
+            
             if (!recognition) {
                 recognition = initVoiceRecognition();
                 if (!recognition) return;
@@ -519,7 +599,7 @@
             }
         }
         
-        // Iniciar escucha
+        // Iniciar escucha (modo single)
         function startListening() {
             isListening = true;
             const voiceBtn = document.getElementById('voice-btn');
@@ -527,11 +607,10 @@
             
             voiceBtn.classList.add('listening');
             voiceStatus.classList.add('active');
+            document.getElementById('status-text').textContent = 'Escuchando...';
             
             try {
                 recognition.start();
-                // Marcar que se dio permiso exitosamente
-                markPermissionGranted();
             } catch (error) {
                 console.error('Error al iniciar reconocimiento:', error);
                 stopListening();
@@ -551,14 +630,14 @@
         // Convertir nombre de carta a nombre de archivo
         function cardNameToFilename(cardName) {
             return cardName
-                .toLowerCase() // A minúsculas
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
-                .replace(/\s+/g, '-') // Espacios a guiones
-                .replace(/[^a-z0-9-]/g, '') // Solo letras, números y guiones
+                .toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '')
                 + '.png';
         }
         
-        // Cargar imagen de carta
+        // Cargar imagen de carta (SILENCIOSO)
         function loadCard(cardName) {
             const cardSlot = document.getElementById('card-slot');
             const filename = cardNameToFilename(cardName);
@@ -566,7 +645,6 @@
             
             console.log('Buscando carta:', cardPath);
             
-            // Crear elemento de imagen
             const img = new Image();
             
             img.onload = () => {
@@ -576,58 +654,36 @@
                     oldImg.remove();
                 }
                 
-                // Agregar nueva imagen
+                // Agregar nueva imagen SILENCIOSAMENTE
                 cardSlot.appendChild(img);
-                showNotification(`Carta cargada: ${cardName}`, 'success');
+                console.log('✅ Carta cargada:', cardName);
             };
             
             img.onerror = () => {
-                showNotification(`Carta no encontrada: "${cardName}"
-Archivo buscado: ${filename}`);
+                // NO mostrar nada, solo log en consola
+                console.log('❌ Carta no encontrada:', filename);
             };
             
             img.src = cardPath;
             img.alt = cardName;
         }
         
-        // Mostrar notificación
-        function showNotification(message, type = 'error') {
-            const notification = document.getElementById('card-notification');
-            notification.textContent = message;
-            notification.style.background = type === 'success' 
-                ? 'rgba(57, 255, 20, 0.9)' 
-                : 'rgba(255, 0, 127, 0.9)';
-            
-            notification.classList.add('show');
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Atajo de teclado: presionar "V" para activar voz (solo después de dar permiso inicial)
-        let permissionGranted = false;
-        
+        // Atajos de teclado
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'v' || e.key === 'V') {
-                // Solo funciona si ya se dio permiso antes con click en el botón
-                if (permissionGranted && recognition) {
-                    toggleVoiceRecognition();
-                } else if (!permissionGranted) {
-                    showNotification('Primero haz click en el botón del micrófono para dar permiso', 'error');
-                }
+            // Tecla "C" = Modo Continuo
+            if (e.key === 'c' || e.key === 'C') {
+                toggleContinuousMode();
+            }
+            // Tecla "V" = Modo Single (solo si NO está en modo continuo)
+            else if ((e.key === 'v' || e.key === 'V') && !continuousMode) {
+                toggleVoiceRecognition();
             }
         });
         
-        // Función auxiliar para marcar que se dio permiso
-        function markPermissionGranted() {
-            permissionGranted = true;
-            console.log('✅ Permiso de micrófono concedido. Ahora puedes usar la tecla "V"');
-        }
-        
         console.log('🎤 Sistema de voz listo!');
-        console.log('📝 Haz click en el botón del micrófono para dar permiso inicial');
-        console.log('⌨️ Después podrás usar la tecla "V" para activar/desactivar');
+        console.log('🔄 Presiona "C" o click en ∞ para MODO CONTINUO');
+        console.log('🎙️ Presiona "V" o click en micrófono para modo SINGLE');
+
     </script>
 </body>
 </html>
