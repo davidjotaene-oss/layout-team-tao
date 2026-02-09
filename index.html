@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Layout MyL Final - Dual God Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Orbitron:wght@700&family=Montserrat:wght@800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -24,12 +25,29 @@
             color: white;
             overflow: hidden;
         }
+        
+        /* Clase para modo preview responsive */
+        body.preview-mode {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111 !important;
+        }
 
         .layout-grid {
             display: grid;
             grid-template-columns: 1fr 420px;
             grid-template-rows: 160px 1fr 20px;
             width: 100%; height: 100%;
+        }
+        
+        /* Escalado en modo preview */
+        body.preview-mode .layout-grid {
+            width: 1920px;
+            height: 1080px;
+            transform-origin: center center;
         }
 
         /* --- HEADER --- */
@@ -130,11 +148,184 @@
         .neon-border:hover .score-btn { opacity: 1; }
         .footer-bar { grid-column: 1 / span 2; background: linear-gradient(90deg, var(--neon-cyan), black, var(--neon-pink)); }
         .label { display: block; color: var(--neon-pink); font-size: 1.1rem; text-transform: uppercase; margin-bottom: 8px; }
-        .card-slot { width: 100%; height: 460px; background: rgba(0,0,0,0.5); border: 1px dashed #333; border-radius: 15px; }
+        .card-slot { 
+            width: 100%; 
+            height: 460px; 
+            background: rgba(0,0,0,0.5); 
+            border: 1px dashed #333; 
+            border-radius: 15px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        /* Imagen de la carta */
+        .card-slot img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+            animation: cardAppear 0.5s ease-out;
+        }
+        
+        @keyframes cardAppear {
+            from { 
+                transform: scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            to { 
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+        
+        /* Botón de micrófono */
+        .voice-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+        
+        .voice-btn:hover {
+            background: var(--neon-cyan);
+            color: black;
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.6);
+        }
+        
+        .voice-btn.listening {
+            background: var(--neon-pink);
+            border-color: var(--neon-pink);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { 
+                box-shadow: 0 0 15px var(--neon-pink);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 35px var(--neon-pink);
+                transform: scale(1.15);
+            }
+        }
+        
+        /* Mensaje de estado de voz */
+        .voice-status {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--neon-cyan);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .voice-status.active {
+            opacity: 1;
+        }
+        
+        .voice-status i {
+            display: block;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            animation: micPulse 0.8s infinite;
+        }
+        
+        @keyframes micPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        /* Notificación de carta no encontrada */
+        .card-notification {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 127, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        .card-notification.show {
+            opacity: 1;
+        }
         .logo-geek { width: 230px; filter: drop-shadow(0 0 8px var(--neon-cyan)); z-index: 15; position: relative; }
+        
+        /* Botón Toggle OBS/Preview */
+        .mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: var(--neon-cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+        
+        .mode-toggle:hover {
+            background: var(--neon-cyan);
+            color: black;
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.6);
+        }
+        
+        .mode-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            margin-right: 8px;
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+        
+        body.preview-mode .mode-indicator {
+            background: var(--neon-pink);
+            box-shadow: 0 0 10px var(--neon-pink);
+        }
     </style>
 </head>
 <body>
+    <!-- Botón Toggle OBS/Preview -->
+    <button class="mode-toggle" onclick="toggleMode()">
+        <span class="mode-indicator"></span>
+        <span id="mode-text">MODO OBS</span>
+    </button>
 
     <div class="layout-grid">
         <header class="header">
@@ -173,7 +364,21 @@
         <aside class="sidebar">
             <div class="neon-border">
                 <span class="label">Carta Jugada</span>
-                <div class="card-slot"></div>
+                <div class="card-slot" id="card-slot">
+                    <!-- Mensaje de estado de voz -->
+                    <div class="voice-status" id="voice-status">
+                        <i class="fas fa-microphone"></i>
+                        <span id="status-text">Escuchando...</span>
+                    </div>
+                    
+                    <!-- Notificación -->
+                    <div class="card-notification" id="card-notification"></div>
+                    
+                    <!-- Botón de micrófono -->
+                    <button class="voice-btn" id="voice-btn" onclick="toggleVoiceRecognition()" title="Click para activar reconocimiento de voz">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="neon-border">
@@ -206,11 +411,223 @@
     </div>
 
     <script>
+        // ===== SISTEMA DE SCORE =====
         function changeScore(player, amount) {
             const el = document.getElementById(player + '-val');
             let score = parseInt(el.innerText);
             if (score + amount >= 0) el.innerText = score + amount;
         }
+        
+        // ===== SISTEMA DE MODO OBS/PREVIEW =====
+        function toggleMode() {
+            const body = document.body;
+            const modeText = document.getElementById('mode-text');
+            
+            body.classList.toggle('preview-mode');
+            
+            if (body.classList.contains('preview-mode')) {
+                modeText.textContent = 'MODO PREVIEW';
+                scaleLayout();
+            } else {
+                modeText.textContent = 'MODO OBS';
+                const container = document.querySelector('.layout-grid');
+                container.style.transform = '';
+            }
+        }
+        
+        function scaleLayout() {
+            const container = document.querySelector('.layout-grid');
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            const layoutWidth = 1920;
+            const layoutHeight = 1080;
+            
+            const scaleX = windowWidth / layoutWidth;
+            const scaleY = windowHeight / layoutHeight;
+            const scale = Math.min(scaleX, scaleY);
+            
+            container.style.transform = `scale(${scale})`;
+        }
+        
+        window.addEventListener('resize', () => {
+            if (document.body.classList.contains('preview-mode')) {
+                scaleLayout();
+            }
+        });
+        
+        // ===== SISTEMA DE RECONOCIMIENTO DE VOZ =====
+        let recognition = null;
+        let isListening = false;
+        
+        // Inicializar reconocimiento de voz
+        function initVoiceRecognition() {
+            // Verificar soporte del navegador
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                showNotification('Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.');
+                return null;
+            }
+            
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES'; // Español
+            recognition.continuous = false; // Solo una frase
+            recognition.interimResults = false; // Solo resultados finales
+            
+            // Cuando obtiene un resultado
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                console.log('Escuchado:', transcript);
+                loadCard(transcript);
+            };
+            
+            // Cuando termina de escuchar
+            recognition.onend = () => {
+                stopListening();
+            };
+            
+            // Si hay error
+            recognition.onerror = (event) => {
+                console.error('Error de reconocimiento:', event.error);
+                
+                let message = 'Error al escuchar';
+                if (event.error === 'no-speech') {
+                    message = 'No se detectó voz';
+                } else if (event.error === 'not-allowed') {
+                    message = 'Permiso de micrófono denegado';
+                }
+                
+                showNotification(message);
+                stopListening();
+            };
+            
+            return recognition;
+        }
+        
+        // Alternar reconocimiento de voz
+        function toggleVoiceRecognition() {
+            if (!recognition) {
+                recognition = initVoiceRecognition();
+                if (!recognition) return;
+            }
+            
+            if (isListening) {
+                recognition.stop();
+            } else {
+                startListening();
+            }
+        }
+        
+        // Iniciar escucha
+        function startListening() {
+            isListening = true;
+            const voiceBtn = document.getElementById('voice-btn');
+            const voiceStatus = document.getElementById('voice-status');
+            
+            voiceBtn.classList.add('listening');
+            voiceStatus.classList.add('active');
+            
+            try {
+                recognition.start();
+                // Marcar que se dio permiso exitosamente
+                markPermissionGranted();
+            } catch (error) {
+                console.error('Error al iniciar reconocimiento:', error);
+                stopListening();
+            }
+        }
+        
+        // Detener escucha
+        function stopListening() {
+            isListening = false;
+            const voiceBtn = document.getElementById('voice-btn');
+            const voiceStatus = document.getElementById('voice-status');
+            
+            voiceBtn.classList.remove('listening');
+            voiceStatus.classList.remove('active');
+        }
+        
+        // Convertir nombre de carta a nombre de archivo
+        function cardNameToFilename(cardName) {
+            return cardName
+                .toLowerCase() // A minúsculas
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
+                .replace(/\s+/g, '-') // Espacios a guiones
+                .replace(/[^a-z0-9-]/g, '') // Solo letras, números y guiones
+                + '.png';
+        }
+        
+        // Cargar imagen de carta
+        function loadCard(cardName) {
+            const cardSlot = document.getElementById('card-slot');
+            const filename = cardNameToFilename(cardName);
+            const cardPath = `cartas/${filename}`;
+            
+            console.log('Buscando carta:', cardPath);
+            
+            // Crear elemento de imagen
+            const img = new Image();
+            
+            img.onload = () => {
+                // Limpiar slot anterior
+                const oldImg = cardSlot.querySelector('img');
+                if (oldImg) {
+                    oldImg.remove();
+                }
+                
+                // Agregar nueva imagen
+                cardSlot.appendChild(img);
+                showNotification(`Carta cargada: ${cardName}`, 'success');
+            };
+            
+            img.onerror = () => {
+                showNotification(`Carta no encontrada: "${cardName}"
+Archivo buscado: ${filename}`);
+            };
+            
+            img.src = cardPath;
+            img.alt = cardName;
+        }
+        
+        // Mostrar notificación
+        function showNotification(message, type = 'error') {
+            const notification = document.getElementById('card-notification');
+            notification.textContent = message;
+            notification.style.background = type === 'success' 
+                ? 'rgba(57, 255, 20, 0.9)' 
+                : 'rgba(255, 0, 127, 0.9)';
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Atajo de teclado: presionar "V" para activar voz (solo después de dar permiso inicial)
+        let permissionGranted = false;
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'v' || e.key === 'V') {
+                // Solo funciona si ya se dio permiso antes con click en el botón
+                if (permissionGranted && recognition) {
+                    toggleVoiceRecognition();
+                } else if (!permissionGranted) {
+                    showNotification('Primero haz click en el botón del micrófono para dar permiso', 'error');
+                }
+            }
+        });
+        
+        // Función auxiliar para marcar que se dio permiso
+        function markPermissionGranted() {
+            permissionGranted = true;
+            console.log('✅ Permiso de micrófono concedido. Ahora puedes usar la tecla "V"');
+        }
+        
+        console.log('🎤 Sistema de voz listo!');
+        console.log('📝 Haz click en el botón del micrófono para dar permiso inicial');
+        console.log('⌨️ Después podrás usar la tecla "V" para activar/desactivar');
     </script>
 </body>
 </html>
