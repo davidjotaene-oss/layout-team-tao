@@ -478,10 +478,12 @@
             }
         });
         
-        // ===== SISTEMA DE RECONOCIMIENTO DE VOZ =====
+        // ===== SISTEMA DE RECONOCIMIENTO DE VOZ OPTIMIZADO =====
         let recognition = null;
         let isListening = false;
         let continuousMode = false;
+        let lastCardDetected = ''; // Evitar duplicados
+        let lastDetectionTime = 0;
         
         // Inicializar reconocimiento de voz
         function initVoiceRecognition() {
@@ -494,27 +496,67 @@
             
             recognition = new SpeechRecognition();
             recognition.lang = 'es-ES';
-            recognition.continuous = false; // Se reiniciará automáticamente en modo continuo
-            recognition.interimResults = false;
+            recognition.continuous = true; // OPTIMIZACIÓN: Modo continuo nativo
+            recognition.interimResults = true; // OPTIMIZACIÓN: Resultados parciales para respuesta rápida
+            recognition.maxAlternatives = 3; // OPTIMIZACIÓN: Capturar hasta 3 alternativas
             
-            // Cuando obtiene un resultado
+            // Cuando obtiene un resultado (incluyendo parciales)
             recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                console.log('Detectado:', transcript);
-                loadCard(transcript);
+                const results = event.results[event.results.length - 1];
+                
+                // Procesar resultado final o interim con alta confianza
+                if (results.isFinal || results[0].confidence > 0.6) {
+                    // Revisar todas las alternativas
+                    for (let i = 0; i < results.length; i++) {
+                        const transcript = results[i].transcript.trim();
+                        const confidence = results[i].confidence;
+                        
+                        console.log(`Detectado [${i}]: "${transcript}" (confianza: ${(confidence * 100).toFixed(1)}%)`);
+                        
+                        // Evitar procesar la misma carta muy seguido (anti-duplicados)
+                        const now = Date.now();
+                        if (transcript === lastCardDetected && (now - lastDetectionTime) < 2000) {
+                            console.log('⏭️ Carta duplicada ignorada');
+                            continue;
+                        }
+                        
+                        // Si tiene confianza razonable, intentar cargar
+                        if (confidence > 0.5 || results.isFinal) {
+                            lastCardDetected = transcript;
+                            lastDetectionTime = now;
+                            loadCard(transcript);
+                            break; // Solo usar la primera alternativa válida
+                        }
+                    }
+                }
             };
             
             // Cuando termina de escuchar
             recognition.onend = () => {
-                // Si está en modo continuo, reiniciar automáticamente
+                console.log('🔄 Reconocimiento finalizado');
+                
+                // Si está en modo continuo, reiniciar INMEDIATAMENTE
                 if (continuousMode) {
                     setTimeout(() => {
                         try {
                             recognition.start();
+                            console.log('✅ Reconocimiento reiniciado');
                         } catch (e) {
-                            console.log('Reiniciando reconocimiento...');
+                            // Si ya está corriendo, ignorar
+                            if (e.message.includes('already started')) {
+                                console.log('Ya está escuchando');
+                            } else {
+                                console.log('⚠️ Reintentando reconocimiento...');
+                                setTimeout(() => {
+                                    try {
+                                        recognition.start();
+                                    } catch (err) {
+                                        console.error('Error crítico:', err);
+                                    }
+                                }, 200);
+                            }
                         }
-                    }, 300);
+                    }, 100); // OPTIMIZACIÓN: Reducido de 300ms a 100ms
                 } else {
                     stopListening();
                 }
@@ -524,18 +566,30 @@
             recognition.onerror = (event) => {
                 console.error('Error de reconocimiento:', event.error);
                 
-                // En modo continuo, reintentar silenciosamente
-                if (continuousMode && event.error !== 'not-allowed') {
+                // En modo continuo, reintentar silenciosamente (excepto permiso denegado)
+                if (continuousMode && event.error !== 'not-allowed' && event.error !== 'aborted') {
+                    console.log('🔄 Reintentando tras error...');
                     setTimeout(() => {
                         try {
+                            if (!isListening) return;
                             recognition.start();
                         } catch (e) {
-                            console.log('Reintentando...');
+                            console.log('Reintento fallido, esperando...');
                         }
                     }, 500);
+                } else if (event.error === 'not-allowed') {
+                    alert('Permiso de micrófono denegado. Por favor, permite el acceso al micrófono.');
+                    continuousMode = false;
+                    stopListening();
+                    document.getElementById('continuous-btn').classList.remove('active');
                 } else {
                     stopListening();
                 }
+            };
+            
+            // Cuando inicia
+            recognition.onstart = () => {
+                console.log('🎤 Micrófono activo');
             };
             
             return recognition;
@@ -562,9 +616,14 @@
                 try {
                     recognition.start();
                     isListening = true;
-                    console.log('🎤 Modo continuo ACTIVADO - Hablando detectará cartas automáticamente');
+                    console.log('🎤 MODO CONTINUO ACTIVADO');
+                    console.log('💡 Habla claro y pausado para mejores resultados');
                 } catch (error) {
                     console.error('Error al iniciar:', error);
+                    if (error.message.includes('already started')) {
+                        console.log('Ya está escuchando');
+                        isListening = true;
+                    }
                 }
             } else {
                 // Desactivar modo continuo
@@ -583,13 +642,15 @@
         function toggleVoiceRecognition() {
             // Si está en modo continuo, no hacer nada
             if (continuousMode) {
-                console.log('Desactiva el modo continuo primero');
+                console.log('⚠️ Desactiva el modo continuo primero (botón ∞ o tecla C)');
                 return;
             }
             
             if (!recognition) {
                 recognition = initVoiceRecognition();
                 if (!recognition) return;
+                // Para modo single, cambiar a no-continuo
+                recognition.continuous = false;
             }
             
             if (isListening) {
@@ -611,6 +672,7 @@
             
             try {
                 recognition.start();
+                console.log('🎙️ Modo single activado - di una carta');
             } catch (error) {
                 console.error('Error al iniciar reconocimiento:', error);
                 stopListening();
@@ -643,7 +705,7 @@
             const filename = cardNameToFilename(cardName);
             const cardPath = `cartas/${filename}`;
             
-            console.log('Buscando carta:', cardPath);
+            console.log(`🔍 Buscando: ${cardPath}`);
             
             const img = new Image();
             
@@ -656,12 +718,12 @@
                 
                 // Agregar nueva imagen SILENCIOSAMENTE
                 cardSlot.appendChild(img);
-                console.log('✅ Carta cargada:', cardName);
+                console.log(`✅ Carta cargada: "${cardName}"`);
             };
             
             img.onerror = () => {
                 // NO mostrar nada, solo log en consola
-                console.log('❌ Carta no encontrada:', filename);
+                console.log(`❌ No encontrada: "${cardName}" → ${filename}`);
             };
             
             img.src = cardPath;
@@ -680,7 +742,8 @@
             }
         });
         
-        console.log('🎤 Sistema de voz listo!');
+        console.log('🎤 Sistema de voz OPTIMIZADO listo!');
+        console.log('⚡ Mejoras: Respuesta rápida + Mayor sensibilidad + Reconexión instantánea');
         console.log('🔄 Presiona "C" o click en ∞ para MODO CONTINUO');
         console.log('🎙️ Presiona "V" o click en micrófono para modo SINGLE');
 
